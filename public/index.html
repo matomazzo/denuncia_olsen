@@ -4,109 +4,293 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ouvidoria Olsen</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main class="container">
-    <h1>Formulário de Ouvidoria</h1>
+<div class="sidebar-strip"></div>
 
-    <form id="formManifestacao" enctype="multipart/form-data">
-      <section>
-        <h2>1. Tipo de Manifestação</h2>
-        <select name="tipoManifestacao" id="tipoManifestacao" required>
-          <option value="">Selecione...</option>
-          <option value="sugestao">Sugestão</option>
-          <option value="elogio">Elogio</option>
-          <option value="reclamacao">Reclamação</option>
-          <option value="denuncia">Denúncia</option>
-        </select>
-      </section>
+<div id="app">
+  <div class="page-wrapper">
 
-      <div id="blocoGeral" class="hidden">
-        <section>
-          <h2>2. Identificação (opcional)</h2>
-          <label><input type="radio" name="identificacao" value="nao" checked /> Desejo permanecer anônimo</label>
-          <label><input type="radio" name="identificacao" value="sim" /> Desejo me identificar</label>
-          <div id="identificacaoCampos" class="hidden">
-            <input type="text" name="nome" placeholder="Nome completo" />
-            <input type="email" name="email" placeholder="E-mail" />
-            <input type="tel" name="telefone" placeholder="Telefone" />
+    <!-- Header -->
+    <div class="brand-header">
+      <div class="brand-tag"><i class="bi bi-shield-check me-1"></i>Canal de Comunicação</div>
+      <h1 class="brand-title">Ouvidoria Olsen</h1>
+      <p class="brand-subtitle">Sua manifestação é tratada com sigilo e seriedade. Utilize este canal para sugestões, elogios, reclamações ou denúncias.</p>
+    </div>
+
+    <div class="form-card">
+
+      <!-- Step nav -->
+      <div class="step-nav">
+        <span class="step-pill" :class="{ active: step >= 1, done: step > 1 }">
+          <i class="bi bi-1-circle me-1"></i> Tipo
+        </span>
+        <div class="step-sep"></div>
+        <span class="step-pill" :class="{ active: step >= 2, done: step > 2 }">
+          <i class="bi bi-2-circle me-1"></i> Detalhes
+        </span>
+        <div class="step-sep"></div>
+        <span class="step-pill" :class="{ active: step >= 3 }">
+          <i class="bi bi-3-circle me-1"></i> Confirmação
+        </span>
+      </div>
+
+      <div class="form-body">
+
+        <!-- STEP 1: Tipo -->
+        <div v-if="step === 1" class="slide-in">
+          <div class="section-label"><span class="num">1</span> Qual o tipo da sua manifestação?</div>
+          <div class="type-grid">
+            <div v-for="t in tipos" :key="t.value"
+                 class="type-card"
+                 :class="{ selected: form.tipo === t.value }"
+                 @click="selecionarTipo(t.value)">
+              <div class="icon-wrap"><i :class="t.icon"></i></div>
+              <div>
+                <div class="label-text">{{ t.label }}</div>
+                <div class="desc-text">{{ t.desc }}</div>
+              </div>
+            </div>
           </div>
-        </section>
 
-        <section>
-          <h2>3. Área e envolvidos</h2>
-          <input type="text" name="areaDepartamento" placeholder="Área/Departamento" />
-          <input type="text" name="nomesEnvolvidos" placeholder="Nome(s) envolvido(s)" />
-        </section>
+          <div class="mt-4 d-flex justify-content-end">
+            <button class="btn-submit" :disabled="!form.tipo" @click="avancar">
+              Continuar <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        </div>
 
-        <section>
-          <h2>4. Descrição da manifestação</h2>
-          <textarea name="descricao" rows="6" required></textarea>
-        </section>
+        <!-- STEP 2: Detalhes -->
+        <div v-if="step === 2" class="slide-in">
 
-        <section>
-          <h2>7. Já reportou anteriormente?</h2>
-          <label><input type="radio" name="reportouAntes" value="sim" required /> Sim</label>
-          <label><input type="radio" name="reportouAntes" value="nao" required /> Não</label>
-          <textarea name="detalheReporte" rows="3" placeholder="Se sim, quando e para quem?"></textarea>
-        </section>
+          <!-- Identificação (geral) -->
+          <div v-if="form.tipo !== 'denuncia'">
+            <div class="section-label"><span class="num">2</span> Identificação <small class="text-muted fw-normal" style="font-size:12px">(opcional)</small></div>
+            <div class="choice-group">
+              <label class="choice-item">
+                <input type="radio" v-model="form.identificacao" value="nao" />
+                <span><strong>Permanecer anônimo</strong></span>
+              </label>
+              <label class="choice-item">
+                <input type="radio" v-model="form.identificacao" value="sim" />
+                <span><strong>Me identificar</strong></span>
+              </label>
+            </div>
+            <div v-if="form.identificacao === 'sim'" class="id-fields slide-in">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label">Nome completo</label>
+                  <input type="text" class="form-control" v-model="form.nome" placeholder="Seu nome" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">E-mail</label>
+                  <input type="email" class="form-control" v-model="form.email" placeholder="seu@email.com" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Telefone</label>
+                  <input type="tel" class="form-control" v-model="form.telefone" placeholder="(00) 00000-0000" />
+                </div>
+              </div>
+            </div>
+            <hr class="divider" />
+          </div>
 
-        <section>
-          <h2>8. Como deseja retorno?</h2>
-          <label><input type="radio" name="retorno" value="email" required /> E-mail</label>
-          <label><input type="radio" name="retorno" value="telefone" required /> Telefone</label>
-          <label><input type="radio" name="retorno" value="nao" required /> Não desejo retorno</label>
-        </section>
+          <!-- Área e envolvidos -->
+          <div class="section-label"><span class="num" v-text="form.tipo === 'denuncia' ? '2' : '3'"></span> Área e envolvidos</div>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Área / Departamento</label>
+              <input type="text" class="form-control" v-model="form.area" placeholder="Ex: Financeiro, RH..." />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nome(s) envolvido(s)</label>
+              <input type="text" class="form-control" v-model="form.envolvidos" placeholder="Se houver" />
+            </div>
+          </div>
 
-        <section>
-          <label><input type="checkbox" name="termoCiencia" value="sim" /> Declaro que as informações fornecidas são verdadeiras.</label>
-          <label><input type="checkbox" name="consentimentoDados" value="sim" /> Autorizo o uso dos meus dados (LGPD).</label>
-        </section>
+          <!-- Descrição -->
+          <div class="section-label"><span class="num" v-text="form.tipo === 'denuncia' ? '3' : '4'"></span> Descrição</div>
+          <div class="mb-4">
+            <label class="form-label">Descreva sua {{ tipoLabel }} com o máximo de detalhes</label>
+            <textarea class="form-control" v-model="form.descricao" rows="5" :placeholder="'Descreva aqui sua ' + tipoLabel + '...'" required></textarea>
+          </div>
+
+          <!-- Campos extras para denúncia -->
+          <div v-if="form.tipo === 'denuncia'">
+            <div class="section-label"><span class="num">4</span> Data e local</div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-5">
+                <label class="form-label">Data do ocorrido</label>
+                <input type="date" class="form-control" v-model="form.dataOcorrido" />
+              </div>
+              <div class="col-md-7">
+                <label class="form-label">Local</label>
+                <input type="text" class="form-control" v-model="form.local" placeholder="Onde ocorreu?" />
+              </div>
+            </div>
+
+            <div class="section-label"><span class="num">5</span> Possui evidências?</div>
+            <div class="choice-group mb-3">
+              <label class="choice-item">
+                <input type="radio" v-model="form.possuiEvidencias" value="sim" />
+                <span>Sim, tenho arquivos para enviar</span>
+              </label>
+              <label class="choice-item">
+                <input type="radio" v-model="form.possuiEvidencias" value="nao" />
+                <span>Não possuo evidências</span>
+              </label>
+            </div>
+            <div v-if="form.possuiEvidencias === 'sim'" class="file-zone mb-4 slide-in" @click="$refs.fileInput.click()">
+              <i class="bi bi-cloud-arrow-up-fill d-block"></i>
+              <p v-if="!form.arquivos.length"><strong>Clique para selecionar</strong> ou arraste arquivos aqui</p>
+              <p v-else class="text-success"><i class="bi bi-check-circle me-1"></i>{{ form.arquivos.length }} arquivo(s) selecionado(s)</p>
+              <input ref="fileInput" type="file" multiple class="d-none" @change="handleFiles" />
+            </div>
+          </div>
+
+          <!-- Reportou antes -->
+          <div class="section-label"><span class="num" v-text="form.tipo === 'denuncia' ? '6' : '5'"></span> Já reportou anteriormente?</div>
+          <div class="choice-group mb-3">
+            <label class="choice-item">
+              <input type="radio" v-model="form.reportouAntes" value="sim" />
+              <span>Sim, já reportei</span>
+            </label>
+            <label class="choice-item">
+              <input type="radio" v-model="form.reportouAntes" value="nao" />
+              <span>Não, é a primeira vez</span>
+            </label>
+          </div>
+          <div v-if="form.reportouAntes === 'sim'" class="mb-4 slide-in">
+            <label class="form-label">Quando e para quem?</label>
+            <textarea class="form-control" v-model="form.detalheReporte" rows="3" placeholder="Informe os detalhes..."></textarea>
+          </div>
+
+          <!-- Retorno (apenas não-denúncia) -->
+          <div v-if="form.tipo !== 'denuncia'">
+            <hr class="divider" />
+            <div class="section-label"><span class="num">6</span> Como deseja receber o retorno?</div>
+            <div class="choice-group">
+              <label class="choice-item">
+                <input type="radio" v-model="form.retorno" value="email" />
+                <span><i class="bi bi-envelope me-2"></i>Por e-mail</span>
+              </label>
+              <label class="choice-item">
+                <input type="radio" v-model="form.retorno" value="telefone" />
+                <span><i class="bi bi-telephone me-2"></i>Por telefone</span>
+              </label>
+              <label class="choice-item">
+                <input type="radio" v-model="form.retorno" value="nao" />
+                <span><i class="bi bi-x-circle me-2"></i>Não desejo retorno</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="mt-4 d-flex gap-3">
+            <button class="btn-reset" @click="step = 1">
+              <i class="bi bi-arrow-left me-1"></i> Voltar
+            </button>
+            <button class="btn-submit" :disabled="!podeAvancarStep2" @click="avancar">
+              Revisar <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Revisão e envio -->
+        <div v-if="step === 3" class="slide-in">
+          <div class="section-label"><span class="num"><i class="bi bi-check2"></i></span> Revise e confirme</div>
+
+          <div class="table-responsive mb-4">
+            <table class="table table-sm" style="font-size:14px">
+              <tbody>
+                <tr>
+                  <td class="text-muted" style="width:40%">Tipo</td>
+                  <td><strong>{{ tipoLabel }}</strong></td>
+                </tr>
+                <tr v-if="form.nome">
+                  <td class="text-muted">Nome</td>
+                  <td>{{ form.nome }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Área</td>
+                  <td>{{ form.area || '—' }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Envolvidos</td>
+                  <td>{{ form.envolvidos || '—' }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Descrição</td>
+                  <td style="white-space:pre-wrap">{{ form.descricao }}</td>
+                </tr>
+                <tr v-if="form.tipo === 'denuncia' && form.dataOcorrido">
+                  <td class="text-muted">Data ocorrido</td>
+                  <td>{{ formatDate(form.dataOcorrido) }}</td>
+                </tr>
+                <tr v-if="form.retorno">
+                  <td class="text-muted">Retorno por</td>
+                  <td>{{ form.retorno }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="consent-box mb-4">
+            <div class="consent-item">
+              <input type="checkbox" v-model="form.termoCiencia" id="termo" />
+              <label for="termo">Declaro que as informações fornecidas são verdadeiras e de minha responsabilidade.</label>
+            </div>
+            <div class="consent-item">
+              <input type="checkbox" v-model="form.consentimentoDados" id="lgpd" />
+              <label for="lgpd">Autorizo o tratamento dos meus dados pessoais conforme a LGPD (Lei 13.709/2018).</label>
+            </div>
+          </div>
+
+          <div v-if="feedback.msg" :class="feedback.ok ? 'feedback-ok' : 'feedback-err'">
+            <i :class="feedback.ok ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-triangle-fill'"></i>
+            {{ feedback.msg }}
+          </div>
+
+          <div class="mt-4 d-flex gap-3 flex-wrap">
+            <button class="btn-reset" @click="step = 2" :disabled="loading">
+              <i class="bi bi-arrow-left me-1"></i> Voltar
+            </button>
+            <button class="btn-submit"
+                    :disabled="!form.termoCiencia || !form.consentimentoDados || loading"
+                    @click="enviar">
+              <span v-if="loading"><i class="bi bi-hourglass-split me-1"></i>Enviando…</span>
+              <span v-else><i class="bi bi-send-fill me-1"></i>Enviar Manifestação</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SUCCESS -->
+        <div v-if="step === 4" class="text-center py-4 slide-in">
+          <div style="font-size:60px; margin-bottom:16px;">✅</div>
+          <h2 class="brand-title" style="font-size:1.6rem; margin-bottom:8px">Manifestação enviada!</h2>
+          <p style="color:var(--text-muted-custom); max-width:380px; margin: 0 auto 28px">
+            Sua {{ tipoLabel.toLowerCase() }} foi recebida com sucesso. Em breve você receberá um retorno, caso tenha solicitado.
+          </p>
+          <button class="btn-submit" @click="reiniciar">
+            <i class="bi bi-plus-circle me-1"></i> Nova Manifestação
+          </button>
+        </div>
+
+      </div><!-- /form-body -->
+
+      <div class="form-footer d-flex align-items-center gap-2" style="font-size:12px; color:var(--text-muted-custom)">
+        <i class="bi bi-lock-fill" style="color:var(--brand-accent)"></i>
+        Suas informações são tratadas com total confidencialidade e segurança.
       </div>
+    </div><!-- /form-card -->
 
-      <div id="blocoDenuncia" class="hidden">
-        <section>
-          <h2>3. Área e envolvidos</h2>
-          <input type="text" name="areaDepartamentoDenuncia" placeholder="Área/Departamento" />
-          <input type="text" name="nomesEnvolvidosDenuncia" placeholder="Nome(s) envolvido(s)" />
-        </section>
+  </div>
+</div>
 
-        <section>
-          <h2>4. Descrição da denúncia</h2>
-          <textarea name="descricaoDenuncia" rows="6"></textarea>
-        </section>
-
-        <section>
-          <h2>5. Data e Local</h2>
-          <input type="date" name="dataOcorrido" />
-          <input type="text" name="localOcorrido" placeholder="Local" />
-        </section>
-
-        <section>
-          <h2>6. Possui evidências?</h2>
-          <label><input type="radio" name="possuiEvidencias" value="sim" /> Sim</label>
-          <label><input type="radio" name="possuiEvidencias" value="nao" /> Não</label>
-          <input type="file" name="evidencias" multiple />
-        </section>
-
-        <section>
-          <h2>7. Já reportou anteriormente?</h2>
-          <label><input type="radio" name="reportouAntesDenuncia" value="sim" /> Sim</label>
-          <label><input type="radio" name="reportouAntesDenuncia" value="nao" /> Não</label>
-          <textarea name="detalheReporteDenuncia" rows="3" placeholder="Se sim, quando e para quem?"></textarea>
-        </section>
-      </div>
-
-      <div class="actions">
-        <button type="submit">Enviar Manifestação</button>
-        <button type="reset">Limpar Formulário</button>
-      </div>
-
-      <p id="feedback"></p>
-    </form>
-  </main>
-
-  <script src="script.js"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
